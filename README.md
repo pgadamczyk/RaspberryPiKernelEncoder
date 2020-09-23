@@ -1,6 +1,8 @@
 # RaspberryPiKernelEncoder
 
-Tested on Rasbian Buster
+This is a kernel driver to read up to 4 quadrature encoders.  The driver is interrupt-driven, and only uses about 2-5% CPU usage with 2 encoders counting at 12Khz each.  Any suggestions/extra code/wahtever else welcome!
+
+Tested on Rasbian Buster on a Raspberry Pi Zero W.  I expect it will work on other versions, but haven't tested it.
 
 Software Initial Setup:
 - sudo apt-get -y install raspberrypi-kernel-headers
@@ -17,7 +19,6 @@ Compiling and installing kernel driver:
 Electrical Hookup:
 - Pin number definitions in device_file.c
 - Change pin definitions at your own risk.  Changes sometimes interfere with other interrupts and cause the driver not to work properly.
-- I tested 2x simulated encoders at 12kHz with an FPGA.  About 3-5% CPU usage on a Raspberry Pi Zero W (didn't test other Raspberry Pis but it should work).
 - Pin numbers Encoder 1
 	- A - 17, B - 27
 - Encoder 2
