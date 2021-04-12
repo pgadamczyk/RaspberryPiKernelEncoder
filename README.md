@@ -1,6 +1,6 @@
 # RaspberryPiKernelEncoder
 
-This is a kernel driver to read up to 4 quadrature encoders.  The driver is interrupt-driven, and only uses about 2-5% CPU usage with 2 encoders counting at 12Khz each.  Any suggestions/extra code/wahtever else welcome!
+This is a kernel driver to read up to 4 quadrature encoders.  The driver is interrupt-driven, and only uses about 2-5% CPU usage with 2 quadrature encoders counting at 12Khz each.  Any suggestions/extra code/whatever else welcome!
 
 Tested on Rasbian Buster on a Raspberry Pi Zero W.  I expect it will work on other versions, but haven't tested it.
 
