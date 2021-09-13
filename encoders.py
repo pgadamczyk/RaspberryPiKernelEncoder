@@ -8,9 +8,6 @@ def readEncoders():
     int2 = int.from_bytes(bytes[4:7],"little",signed=True)
     return [int1,int2]
 
-def resetEncoders():
-    f.write(' ');
-
 [rightEnc, leftEnc] = readEncoders();
 
 print("%d,%d" % (rightEnc, leftEnc));
