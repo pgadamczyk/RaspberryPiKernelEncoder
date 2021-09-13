@@ -19,24 +19,24 @@
 //Be careful which ones you use..  they don't always work
 //sometimes different Interrupt channels conflict.
 
-#define QUADRATURE 0
+#define QUADRATURE 1
 #define NUM_ENCODERS 2
 
 #if QUADRATURE
 #define PIN_1A 17
 #define PIN_1B 27
-#define PIN_2A 5
-#define PIN_2B 6
-#define PIN_3A 23
-#define PIN_3B 24
+#define PIN_2A 23
+#define PIN_2B 24
+#define PIN_3A 5
+#define PIN_3B 6
 #define PIN_4A 16
 #define PIN_4B 26
 
-volatile static int encoder_counts[4] = {0,0,0,0};
+volatile static int encoder_counts[NUM_ENCODERS] = {0};
 volatile static int encoder_pins[8] = {PIN_1A,PIN_1B,PIN_2A,PIN_2B,PIN_3A,PIN_3B,PIN_4A,PIN_4B}; 
 
 volatile static u8 pin_state = 0;
-volatile static unsigned int gpioIRQs[8] = {0,0,0,0,0,0,0,0};
+volatile static unsigned int gpioIRQs[2*NUM_ENCODERS] = {0};
 
 static u8 next_state = 0;
 static int next_val = 0;
@@ -65,7 +65,7 @@ volatile static unsigned int gpioIRQs[NUM_ENCODERS] = {0};
 
 #endif //QUADRATURE
 
-static int cur_irq = 0;
+static int cur_irq = -1;
 
 void wq_handle_irq(struct work_struct *work);
 
@@ -82,15 +82,15 @@ volatile unsigned int interruptCount = 0;
 //interrupt handler.
 static irq_handler_t irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs){   
    interruptCount++;
+#if QUADRATURE
    if (isRunning){
   	int i = 0;
-	for (i = 0; i < NUM_ENCODERS; i++){
+	for (i = 0; i < 2*NUM_ENCODERS; i++){
 		if(irq == gpioIRQs[i]){
 			cur_irq = i;
 			break;
 		}
 	}
-#if QUADRATURE
 	next_val = gpio_get_value(encoder_pins[cur_irq]);
    	next_state = (pin_state & ~(0x01 << cur_irq)) | (next_val << cur_irq);
 	encoder_id = cur_irq >> 1;
@@ -117,7 +117,14 @@ static irq_handler_t irq_handler(unsigned int irq, void *dev_id, struct pt_regs 
 	encoder_counts[encoder_id] = encoder_counts[encoder_id] + stateChangeTable[prevPins][nextPins];
 	pin_state = next_state;
 #else //NOT QUADRATURE
-
+   if (isRunning){
+  	int i = 0;
+	for (i = 0; i < NUM_ENCODERS; i++){
+		if(irq == gpioIRQs[i]){
+			cur_irq = i;
+			break;
+		}
+	}
    encoder_counts[cur_irq] ++;
 
 #endif //QUADRATURE
@@ -148,7 +155,7 @@ static ssize_t device_file_read(
                         , loff_t *position)
 {
 
-//   printk("Interrupt Count: %d\n",interruptCount);
+   printk("Interrupt Count: %d\n",interruptCount);
    copy_to_user(user_buffer,encoder_counts,sizeof(int)*NUM_ENCODERS);
 
    return sizeof(int)*NUM_ENCODERS;
@@ -179,7 +186,18 @@ int register_device(void)
    }
 
    device_file_major_number = result;
+#if QUADRATURE
+   int i = 0;
+   for (i = 0; i < 2*NUM_ENCODERS; i++){
 
+	gpioIRQs[i] = gpio_to_irq(encoder_pins[i]);
+	gpio_request(encoder_pins[i],"encoder");
+	gpio_direction_input(encoder_pins[i]);
+	gpio_export(encoder_pins[i],false);
+	result = request_irq(gpioIRQs[i],(irq_handler_t) irq_handler,IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,"encoder_irq",NULL);
+   }
+ 
+#else
    int i = 0;
    for (i = 0; i < NUM_ENCODERS; i++){
 
@@ -189,6 +207,7 @@ int register_device(void)
 	gpio_export(encoder_pins[i],false);
 	result = request_irq(gpioIRQs[i],(irq_handler_t) irq_handler,IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,"encoder_irq",NULL);
    }
+#endif
    isRunning = 1;
 
    return 0;
@@ -199,12 +218,19 @@ void unregister_device(void)
    isRunning = 0;
    printk( KERN_NOTICE, "encoder-driver: unregister_device() is called" );
    int i = 0;
-   for (i = 0; i < NUM_ENCODERS; i++){
+#if QUADRATURE
+   for (i = 0; i < 2*NUM_ENCODERS; i++){
 	free_irq(gpioIRQs[i],NULL);
 	gpio_unexport(encoder_pins[i]);
 	gpio_free(encoder_pins[i]);
    }
-
+#else
+    for (i = 0; i < NUM_ENCODERS; i++){
+        free_irq(gpioIRQs[i],NULL);
+        gpio_unexport(encoder_pins[i]);
+        gpio_free(encoder_pins[i]);
+   }
+#endif
    if(device_file_major_number != 0)
    {
       unregister_chrdev(device_file_major_number, device_name);
