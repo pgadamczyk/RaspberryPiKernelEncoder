@@ -4,8 +4,8 @@ import encoders
 import time
 
 while True:
-    [l,r] = encoders.readEncoders();
-    print("%d,%d" % (l,r));
+    [leftEnc,rightEnc] = encoders.readEncoders();
+    print("%d,%d" % (leftEnc,rightEnc));
     time.sleep(.01);  
 
 
