@@ -1,7 +1,12 @@
 #! /usr/bin/python3
-
-f = open("/dev/encoder-driver",'rb');
-
+import sys
+try:
+    f = open("/dev/encoder-driver",'rb');
+except Exception as e:
+    print(e,file=sys.stderr)
+    print("ENCODER DRIVER NOT FOUND... DID YOU FORGET TO sudo make load IT?",file=sys.stderr)
+    exit()
+    
 def readEncoders():
     bytes = f.read(8);
     leftInt = int.from_bytes(bytes[0:3],"little",signed=True)
