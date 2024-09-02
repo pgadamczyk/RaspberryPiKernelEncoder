@@ -193,7 +193,7 @@ int register_device(void)
 	gpioIRQs[i] = gpio_to_irq(encoder_pins[i]);
 	gpio_request(encoder_pins[i],"encoder");
 	gpio_direction_input(encoder_pins[i]);
-	gpio_export(encoder_pins[i],false);
+	gpiod_export(encoder_pins[i],false);
 	result = request_irq(gpioIRQs[i],(irq_handler_t) irq_handler,IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,"encoder_irq",NULL);
    }
  
@@ -204,7 +204,7 @@ int register_device(void)
 	gpioIRQs[i] = gpio_to_irq(encoder_pins[i]);
 	gpio_request(encoder_pins[i],"encoder");
 	gpio_direction_input(encoder_pins[i]);
-	gpio_export(encoder_pins[i],false);
+	gpiod_export(encoder_pins[i],false);
 	result = request_irq(gpioIRQs[i],(irq_handler_t) irq_handler,IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,"encoder_irq",NULL);
    }
 #endif
@@ -221,13 +221,13 @@ void unregister_device(void)
 #if QUADRATURE
    for (i = 0; i < 2*NUM_ENCODERS; i++){
 	free_irq(gpioIRQs[i],NULL);
-	gpio_unexport(encoder_pins[i]);
+	gpiod_unexport(encoder_pins[i]);
 	gpio_free(encoder_pins[i]);
    }
 #else
     for (i = 0; i < NUM_ENCODERS; i++){
         free_irq(gpioIRQs[i],NULL);
-        gpio_unexport(encoder_pins[i]);
+        gpiod_unexport(encoder_pins[i]);
         gpio_free(encoder_pins[i]);
    }
 #endif
